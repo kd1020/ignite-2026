@@ -8,7 +8,7 @@ export default function Registration() {
     teamName: '',
     leaderName: '',
     leaderMobile: '',
-    members: ['', '']
+    members: ['', '', '']
   });
 
   const [errors, setErrors] = useState({});
@@ -30,23 +30,14 @@ export default function Registration() {
 
     if (errors.memberList && errors.memberList[index]) {
       const updatedErrors = { ...errors };
-      delete updatedErrors.memberList[index];
+      const updatedList = { ...errors.memberList };
+      delete updatedList[index];
+      if (Object.keys(updatedList).length === 0) {
+        delete updatedErrors.memberList;
+      } else {
+        updatedErrors.memberList = updatedList;
+      }
       setErrors(updatedErrors);
-    }
-  };
-
-  const addMemberSlot = () => {
-    if (formData.members.length < 5) {
-      setFormData((prev) => ({ ...prev, members: [...prev.members, '']
-}));
-    }
-  };
-
-  const removeMemberSlot = (index) => {
-    if (formData.members.length > 1) {
-      const updated = formData.members.filter((_, idx) => idx !==
-index);
-      setFormData((prev) => ({ ...prev, members: updated }));
     }
   };
 
@@ -80,7 +71,7 @@ index);
       teamName: '',
       leaderName: '',
       leaderMobile: '',
-      members: ['', '']
+      members: ['', '', '']
     });
     setErrors({});
     setStatus('idle');
@@ -209,53 +200,37 @@ Indian mobile number for tournament updates.</span>
                 <div className="members-header">
                   <div>
                     <h3 className="comic-label members-title">
-                      ADDITIONAL SQUAD MEMBERS
-({formData.members.length} / 5)
+                      ADDITIONAL SQUAD MEMBERS (3 REQUIRED)
                     </h3>
-                    <p className="input-hint">Specify full names for
-all other team members.</p>
+                    <p className="input-hint">
+                      Enter full names for all 3 squad members (Total squad size: 4 members including Team Leader).
+                    </p>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={addMemberSlot}
-                    disabled={formData.members.length >= 5 || status
-=== 'submitting'}
-                    className="comic-btn add-member-btn"
-                  >
-                    + ADD MEMBER
-                  </button>
+                  <span className="comic-badge comic-tag-yellow">FIXED 4-MEMBER ROSTER</span>
                 </div>
 
                 {errors.members && <span className="field-error-msg block-error">{errors.members}</span>}
 
                 <div className="member-slots-list">
                   {formData.members.map((member, index) => (
-                    <div key={index} className="member-slot-row">
-                      <div className="slot-index-badge">MEMBER #{index
-+ 1}</div>
-                      <input
-                        type="text"
-                        value={member}
-                        onChange={(e) => handleMemberChange(index,
-e.target.value)}
-                        placeholder={`Member #${index + 1} full name`}
-                        className={`comic-input member-input ${
-                          errors.memberList &&
-errors.memberList[index] ? 'input-error' : ''
-                        }`}
-                        disabled={status === 'submitting'}
-                      />
-                      {formData.members.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeMemberSlot(index)}
-                          className="remove-member-btn"
-                          aria-label={`Remove member ${index + 1}`}
+                    <div key={index} className="member-slot-item">
+                      <div className="member-slot-row">
+                        <div className="slot-index-badge">MEMBER #{index + 2}</div>
+                        <input
+                          type="text"
+                          value={member}
+                          onChange={(e) => handleMemberChange(index, e.target.value)}
+                          placeholder={`Member #${index + 2} full name`}
+                          className={`comic-input member-input ${
+                            errors.memberList && errors.memberList[index] ? 'input-error' : ''
+                          }`}
                           disabled={status === 'submitting'}
-                        >
-                          ✕
-                        </button>
+                        />
+                      </div>
+                      {errors.memberList && errors.memberList[index] && (
+                        <span className="field-error-msg member-error-msg">
+                          {errors.memberList[index]}
+                        </span>
                       )}
                     </div>
                   ))}

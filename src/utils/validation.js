@@ -43,14 +43,12 @@ export function validateRegistrationForm(formState) {
   }
 
   const memberErrors = [];
-  if (!Array.isArray(formState.members) || formState.members.length <
-1) {
-    errors.members = "At least one team member must be specified.";
+  if (!Array.isArray(formState.members) || formState.members.length !== 3) {
+    errors.members = "A fixed team of 4 members (1 leader + 3 squad members) is required.";
   } else {
     formState.members.forEach((member, index) => {
       if (!member || member.trim().length < 2) {
-        memberErrors[index] = `Member #${index + 1} name must be at
-least 2 characters.`;
+        memberErrors[index] = `Member #${index + 2} name is required (minimum 2 characters).`;
       }
     });
     if (memberErrors.length > 0) {

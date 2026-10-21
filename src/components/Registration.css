@@ -153,7 +153,13 @@
 .member-slots-list {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
+}
+
+.member-slot-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .member-slot-row {
@@ -162,6 +168,13 @@
   gap: 0.75rem;
   width: 100%;
   min-width: 0;
+}
+
+.member-error-msg {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary-red);
+  margin-left: 0.25rem;
 }
 
 .slot-index-badge {
