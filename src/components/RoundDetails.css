@@ -1,0 +1,449 @@
+.round-details-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.round-detail-section {
+  padding: clamp(3rem, 7vw, 5rem) 0;
+  border-top: var(--border-heavy);
+  position: relative;
+}
+
+.r1-theme { background-color: #FFFDF9; }
+.r2-theme { background-color: #F8FBFF; }
+.r3-theme { background-color: #FFFDF5; }
+
+.detail-header-panel {
+  padding: 2.5rem;
+  margin-bottom: 2.5rem;
+  box-sizing: border-box;
+}
+
+.detail-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.meta-tag {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: #666;
+}
+
+.detail-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 6vw, 4.2rem);
+  color: var(--color-black);
+  margin-bottom: 0.5rem;
+  line-height: 1;
+  word-break: break-word;
+}
+
+.detail-lead {
+  font-size: clamp(1rem, 2.2vw, 1.15rem);
+  line-height: 1.55;
+  color: #333;
+  max-width: 800px;
+}
+
+.task-notice-box {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--color-yellow);
+  padding: 0.85rem 1.25rem;
+  border: var(--border-thin);
+  box-shadow: 3px 3px 0 var(--color-black);
+  box-sizing: border-box;
+}
+
+.notice-icon { font-size: 1.5rem; flex-shrink: 0; }
+.notice-text { font-size: 0.95rem; color: var(--color-black); margin: 0; }
+
+.r1-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 2.5rem;
+}
+
+.zones-diagram-card, .scoring-formula-card {
+  padding: 2.25rem;
+  box-sizing: border-box;
+}
+
+.diagram-header, .formula-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.diagram-title, .formula-title {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  color: var(--color-black);
+}
+
+.diagram-badge {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  background: var(--color-primary-red);
+  color: #FFF;
+  padding: 0.25rem 0.65rem;
+  border: 1.5px solid var(--color-black);
+  box-shadow: 2px 2px 0 var(--color-black);
+}
+
+.diagram-desc {
+  font-size: 0.95rem;
+  color: #555;
+  margin-bottom: 1.5rem;
+  line-height: 1.45;
+}
+
+.zone-nodes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.zone-node {
+  background: var(--surface-alt);
+  border: var(--border-thick);
+  box-shadow: 3px 3px 0 var(--color-black);
+  padding: 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  box-sizing: border-box;
+  transition: transform var(--transition-snappy), background-color var(--transition-snappy);
+}
+
+.zone-node:hover {
+  transform: translateY(-4px);
+  background: var(--color-yellow);
+}
+
+.zone-node-badge {
+  width: 28px;
+  height: 28px;
+  background: var(--color-black);
+  color: #FFF;
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zone-node-icon { font-size: 1.5rem; }
+.zone-node-name { font-family: var(--font-heading); font-size: 0.85rem; color: var(--color-black); }
+.zone-node-time { font-size: 0.75rem; color: #555; font-weight: 600; }
+
+.formula-display-box {
+  background: #FFF2F2;
+  border: var(--border-thick);
+  box-shadow: 4px 4px 0 var(--color-black);
+  padding: 1.25rem;
+  text-align: center;
+  margin: 1.25rem 0 1.5rem 0;
+  box-sizing: border-box;
+}
+
+.formula-text {
+  font-family: var(--font-heading);
+  font-size: clamp(1.1rem, 2.5vw, 1.7rem);
+  color: var(--color-primary-red);
+  letter-spacing: 0.05em;
+  word-break: break-word;
+}
+
+.formula-variables { margin-bottom: 1.5rem; }
+.var-title { font-family: var(--font-heading); font-size: 0.95rem; margin-bottom: 0.5rem; }
+.var-list { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; padding: 0; }
+.var-list li { font-size: 0.95rem; line-height: 1.4; }
+.var-symbol { font-family: var(--font-heading); font-size: 1.05rem; color: var(--color-primary-red); margin-right: 0.35rem; }
+
+.zero-score-rule {
+  background: #FFF8EE;
+  border-left: 6px solid var(--color-black);
+  padding: 0.85rem 1rem;
+  border-top: var(--border-thin);
+  border-right: var(--border-thin);
+  border-bottom: var(--border-thin);
+  box-sizing: border-box;
+}
+
+.rule-badge { font-family: var(--font-heading); font-size: 0.75rem; color: var(--color-primary-red); margin-bottom: 0.25rem; }
+.zero-score-rule p { font-size: 0.9rem; font-weight: 600; line-height: 1.4; margin: 0; }
+
+.hitlist-content-wrapper {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 2.5rem;
+}
+
+.duels-timeline-panel, .r2-summary-card {
+  padding: 2.25rem;
+  box-sizing: border-box;
+}
+
+.duels-title { font-family: var(--font-heading); font-size: 1.35rem; margin-bottom: 0.25rem; }
+.duels-subtitle { font-size: 0.95rem; color: #555; display: block; margin-bottom: 1.5rem; }
+
+.duels-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+}
+
+.duel-slot-card {
+  background: #FFF;
+  border: var(--border-thick);
+  box-shadow: 4px 4px 0 var(--color-black);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-sizing: border-box;
+}
+
+.duel-slot-header { display: flex; justify-content: space-between; align-items: center; }
+.duel-slot-number { font-family: var(--font-heading); font-size: 0.8rem; background: var(--color-electric-blue); color: #FFF; padding: 0.2rem 0.5rem; }
+.duel-slot-label { font-size: 0.85rem; font-weight: 700; color: #444; }
+
+.duel-matchup-arena {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-top: 1px dashed #DDD;
+  border-bottom: 1px dashed #DDD;
+}
+
+.arena-team, .arena-opponent { font-family: var(--font-heading); font-size: 0.85rem; }
+.arena-vs { font-family: var(--font-display); font-size: 1.2rem; color: var(--color-primary-red); }
+
+.duel-slot-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #777;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.status-indicator { width: 8px; height: 8px; border-radius: 50%; background: #FFB800; }
+.duel-slot-stakes { display: flex; gap: 0.5rem; margin-top: auto; flex-wrap: wrap; }
+.stake-win { font-family: var(--font-heading); font-size: 0.75rem; background: #E8F5E9; color: #2E7D32; padding: 0.2rem 0.4rem; border: 1px solid #2E7D32; }
+.stake-loss { font-family: var(--font-heading); font-size: 0.75rem; background: #FFEBEE; color: #C62828; padding: 0.2rem 0.4rem; border: 1px solid #C62828; }
+
+.r2-card-title { font-family: var(--font-heading); font-size: 1.35rem; margin-bottom: 0.75rem; }
+.r2-card-desc { font-size: 1rem; line-height: 1.5; color: #333; margin-bottom: 1.5rem; }
+
+.r2-rules-callout {
+  background: var(--surface-alt);
+  padding: 1rem;
+  border: var(--border-thin);
+  box-shadow: 3px 3px 0 var(--color-black);
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-sizing: border-box;
+}
+
+.r2-leaderboard-btn {
+  width: 100%;
+  text-align: center;
+  font-size: 0.95rem;
+  min-height: var(--touch-target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.powerplay-hero-card {
+  padding: 3.5rem 3rem;
+  text-align: center;
+  background: #FFF;
+  border: var(--border-heavy);
+  box-shadow: 10px 10px 0 var(--color-black);
+  box-sizing: border-box;
+}
+
+.powerplay-tag-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.status-coming-soon {
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  background: var(--color-yellow);
+  color: var(--color-black);
+  padding: 0.35rem 0.75rem;
+  border: var(--border-thin);
+  box-shadow: 2px 2px 0 var(--color-black);
+}
+
+.powerplay-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
+  color: var(--color-black);
+  text-shadow: 4px 4px 0 var(--color-yellow), 8px 8px 0 var(--color-black);
+  margin-bottom: 1.5rem;
+  word-break: break-word;
+}
+
+.powerplay-quote-bubble {
+  display: inline-block;
+  background: var(--color-lavender);
+  padding: 1.5rem 2.5rem;
+  border: var(--border-thick);
+  box-shadow: 6px 6px 0 var(--color-black);
+  transform: rotate(-1deg);
+  margin-bottom: 2rem;
+  max-width: 800px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.powerplay-quote {
+  font-family: var(--font-heading);
+  font-size: clamp(1.05rem, 2.4vw, 1.6rem);
+  color: var(--color-black);
+  letter-spacing: 0.04em;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.quote-mark { font-family: var(--font-display); font-size: 2rem; color: var(--color-primary-red); }
+
+.prize-pool-container {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  background: #FFF8EE;
+  border: var(--border-thick);
+  box-shadow: 5px 5px 0 var(--color-black);
+  padding: 1.25rem 2.5rem;
+  margin-bottom: 2rem;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.prize-pool-badge {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  color: var(--color-primary-red);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+}
+
+.prize-pool-message {
+  font-family: var(--font-heading);
+  font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+  color: var(--color-black);
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.powerplay-thematic-note {
+  max-width: 720px;
+  margin: 0 auto 2rem auto;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #444;
+}
+
+.powerplay-footer-badge {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  background: var(--color-black);
+  color: var(--color-yellow);
+  padding: 0.5rem 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .r1-grid, .hitlist-content-wrapper {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .zone-nodes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .duels-slots-grid {
+    grid-template-columns: 1fr;
+  }
+  .detail-header-panel,
+  .zones-diagram-card,
+  .scoring-formula-card,
+  .duels-timeline-panel,
+  .r2-summary-card {
+    padding: 1.75rem 1.25rem;
+  }
+  .powerplay-hero-card {
+    padding: 2rem 1.25rem;
+    box-shadow: 6px 6px 0 var(--color-black);
+  }
+  .powerplay-quote-bubble {
+    padding: 1.25rem 1.5rem;
+  }
+  .prize-pool-container {
+    padding: 1rem 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .detail-header-panel,
+  .zones-diagram-card,
+  .scoring-formula-card,
+  .duels-timeline-panel,
+  .r2-summary-card {
+    padding: 1.25rem 0.9rem;
+  }
+  .powerplay-title {
+    text-shadow: 2.5px 2.5px 0 var(--color-yellow), 5px 5px 0 var(--color-black);
+  }
+  .powerplay-quote-bubble {
+    padding: 1rem 1rem;
+    box-shadow: 4px 4px 0 var(--color-black);
+  }
+  .powerplay-hero-card {
+    padding: 1.5rem 0.9rem;
+    box-shadow: 5px 5px 0 var(--color-black);
+  }
+}
+
+@media (max-width: 380px) {
+  .zone-nodes-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+  }
+  .zone-node {
+    padding: 0.75rem 0.35rem;
+  }
+  .detail-header-panel,
+  .zones-diagram-card,
+  .scoring-formula-card,
+  .duels-timeline-panel,
+  .r2-summary-card {
+    padding: 1rem 0.75rem;
+  }
+}

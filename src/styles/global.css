@@ -1,0 +1,244 @@
+@import './variables.css';
+
+/* CSS Reset & Defaults */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+  background-color: var(--bg-color);
+  color: var(--color-black);
+  font-family: var(--font-body);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-color);
+  background-image: radial-gradient(circle, rgba(23, 23, 23, 0.06) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  color: var(--color-black);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-black);
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+p {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--color-black);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Comic Panels */
+.comic-panel {
+  background: var(--surface-card);
+  border: var(--border-thick);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  transition: transform var(--transition-snappy), box-shadow var(--transition-snappy);
+}
+
+.comic-panel:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Comic Buttons */
+.comic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.85rem 2rem;
+  border: var(--border-thick);
+  border-radius: 0px;
+  box-shadow: var(--shadow-md);
+  background: var(--color-yellow);
+  color: var(--color-black);
+  cursor: pointer;
+  min-height: var(--touch-target-min);
+  transition: transform var(--transition-snappy), box-shadow var(--transition-snappy), background-color var(--transition-snappy);
+  text-decoration: none;
+  font-weight: 700;
+  user-select: none;
+}
+
+.comic-btn:hover {
+  transform: translate(-3px, -3px);
+  box-shadow: var(--shadow-lg);
+  background: #FFE066;
+}
+
+.comic-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.comic-btn-primary {
+  background: var(--color-primary-red);
+  color: var(--color-white);
+}
+
+.comic-btn-primary:hover {
+  background: #FF5555;
+}
+
+.comic-btn-cyan {
+  background: var(--color-cyan);
+  color: var(--color-black);
+}
+
+/* Comic Badges */
+.comic-badge {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.35rem 0.75rem;
+  border: var(--border-thin);
+  box-shadow: var(--shadow-sm);
+  background: var(--color-yellow);
+  color: var(--color-black);
+  transform: rotate(-1.5deg);
+  font-weight: 700;
+  max-width: 100%;
+}
+
+.comic-tag-red {
+  background: var(--color-primary-red);
+  color: var(--color-white);
+}
+
+.comic-tag-cyan {
+  background: var(--color-cyan);
+  color: var(--color-black);
+}
+
+.comic-tag-lavender {
+  background: var(--color-lavender);
+  color: var(--color-black);
+}
+
+.comic-tag-yellow {
+  background: var(--color-yellow);
+  color: var(--color-black);
+}
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+/* Section Titles */
+.section-header-wrap {
+  margin-bottom: var(--space-xl);
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 7vw, 4.5rem);
+  color: var(--color-black);
+  text-shadow: 3px 3px 0 var(--color-yellow), 6px 6px 0 var(--color-black);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.section-subtitle {
+  font-size: clamp(0.95rem, 2.5vw, 1.15rem);
+  font-weight: 600;
+  margin-top: 0.75rem;
+  max-width: 680px;
+  color: #333333;
+  line-height: 1.5;
+}
+
+/* Responsive Overrides */
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
+  .container {
+    padding: 0 1.25rem;
+  }
+  .section-title {
+    text-shadow: 2px 2px 0 var(--color-yellow), 4px 4px 0 var(--color-black);
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 14.5px;
+  }
+  .container {
+    padding: 0 1rem;
+  }
+  .comic-btn {
+    font-size: 1rem;
+    padding: 0.75rem 1.4rem;
+  }
+  .section-title {
+    text-shadow: 2px 2px 0 var(--color-yellow), 3px 3px 0 var(--color-black);
+  }
+}
+
+@media (max-width: 360px) {
+  .container {
+    padding: 0 0.75rem;
+  }
+  .comic-btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,57 @@
+:root {
+  /* Design Tokens from Creative Vision */
+  --bg-color: #FFF8EE;
+  --color-primary-red: #F04444;
+  --color-yellow: #FFD84D;
+  --color-cyan: #42DDF5;
+  --color-electric-blue: #2855E8;
+  --color-black: #171717;
+  --color-lavender: #C6B8FF;
+  --color-white: #FFFFFF;
+
+  /* Semantic Surfaces */
+  --surface-card: #FFFFFF;
+  --surface-alt: #FFF0D6;
+  --surface-muted: #F5E8D3;
+  --border-dark: #171717;
+
+  /* Typography */
+  --font-display: 'Bangers', cursive, sans-serif;
+  --font-heading: 'Bungee', cursive, sans-serif;
+  --font-body: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Comic Outlines */
+  --border-thin: 2px solid var(--color-black);
+  --border-thick: 3.5px solid var(--color-black);
+  --border-heavy: 5px solid var(--color-black);
+
+  /* Hard Drop Shadows */
+  --shadow-sm: 3px 3px 0px var(--color-black);
+  --shadow-md: 5px 5px 0px var(--color-black);
+  --shadow-lg: 8px 8px 0px var(--color-black);
+  --shadow-xl: 12px 12px 0px var(--color-black);
+
+  /* Transitions */
+  --transition-snappy: 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Spacing Scale */
+  --space-xs: 0.5rem;
+  --space-sm: 0.75rem;
+  --space-md: 1.25rem;
+  --space-lg: 2rem;
+  --space-xl: 3.5rem;
+  --space-2xl: 5rem;
+
+  /* Mobile Touch Targets */
+  --touch-target-min: 44px;
+}
+
+@media (max-width: 600px) {
+  :root {
+    --shadow-lg: 5px 5px 0px var(--color-black);
+    --shadow-xl: 6px 6px 0px var(--color-black);
+    --space-xl: 2.25rem;
+    --space-2xl: 3.5rem;
+  }
+}

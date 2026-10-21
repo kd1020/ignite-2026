@@ -1,0 +1,177 @@
+.r1-scoring-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.formula-pill {
+  font-family: var(--font-heading);
+  background: var(--color-yellow);
+  padding: 0.5rem 1rem;
+  border: var(--border-thin);
+  box-shadow: 2px 2px 0 var(--color-black);
+  word-break: break-word;
+}
+
+.r1-scoring-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.entry-card, .scores-table-card {
+  padding: 2rem;
+  background: #FFF;
+  box-sizing: border-box;
+}
+
+.card-top-bar {
+  margin-bottom: 0.5rem;
+}
+
+.badge-pill {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  background: var(--color-lavender);
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--color-black);
+}
+
+.panel-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.scoring-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.score-preview-box {
+  background: #FFFBE6;
+  border: var(--border-thick);
+  box-shadow: 3px 3px 0 var(--color-black);
+  padding: 1rem;
+  text-align: center;
+}
+
+.preview-label {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.preview-points {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.2rem);
+  color: var(--color-primary-red);
+  line-height: 1.1;
+}
+
+.preview-formula-audit {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  color: #555;
+  margin-top: 0.25rem;
+  word-break: break-word;
+}
+
+.submit-score-btn {
+  width: 100%;
+  font-size: 1.1rem;
+  padding: 0.85rem;
+  min-height: var(--touch-target-min);
+  box-sizing: border-box;
+}
+
+.table-header-block {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.zone-filter-pills {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.zone-pill {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+  background: #F4F4F4;
+  border: 1px solid var(--color-black);
+  cursor: pointer;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-snappy);
+}
+
+.zone-pill:hover { background: var(--color-yellow); }
+.zone-pill.active {
+  background: var(--color-black);
+  color: var(--color-yellow);
+  box-shadow: 2px 2px 0 var(--color-primary-red);
+}
+
+.zone-tag {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  background: var(--color-yellow);
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--color-black);
+}
+
+.team-sub-num {
+  font-size: 0.75rem;
+  color: #666;
+  font-weight: normal;
+}
+
+.pts-val {
+  font-family: var(--font-heading);
+  color: var(--color-electric-blue);
+}
+
+.correction-warning {
+  background: #FFF3CD;
+  color: #856404;
+  border: 1px solid #FFEEBA;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 1000px) {
+  .r1-scoring-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .entry-card, .scores-table-card {
+    padding: 1.25rem 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-row-2 {
+    grid-template-columns: 1fr;
+  }
+}

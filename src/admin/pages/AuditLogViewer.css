@@ -1,0 +1,142 @@
+.audit-log-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.security-tag {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  background: var(--color-yellow);
+  padding: 0.4rem 0.8rem;
+  border: var(--border-thin);
+  box-shadow: 2px 2px 0 var(--color-black);
+}
+
+.audit-filters-bar {
+  padding: 1rem 1.5rem;
+  background: #FFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.filter-group label {
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.reload-btn {
+  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+  min-height: var(--touch-target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.audit-table-card {
+  background: #FFF;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.timestamp-cell {
+  font-size: 0.8rem;
+  color: #555;
+  white-space: nowrap;
+}
+
+.action-tag {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  background: var(--color-black);
+  color: var(--color-yellow);
+  padding: 0.2rem 0.5rem;
+  white-space: nowrap;
+}
+
+.admin-email-sub {
+  font-size: 0.75rem;
+  color: #777;
+}
+
+.reason-cell {
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.inspect-btn {
+  font-family: var(--font-heading);
+  font-size: 0.7rem;
+  background: var(--surface-alt);
+  border: var(--border-thin);
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--color-black);
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diff-row td {
+  background: #FFFBE6;
+  padding: 1rem 1.5rem;
+}
+
+.diff-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.diff-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.diff-title {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.diff-pre {
+  background: #171717;
+  color: #42DDF5;
+  padding: 0.85rem;
+  font-size: 0.75rem;
+  font-family: monospace;
+  overflow-x: auto;
+  max-height: 250px;
+  border: 1px solid #333;
+}
+
+@media (max-width: 700px) {
+  .audit-filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  .diff-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .diff-row td {
+    padding: 0.75rem;
+  }
+}

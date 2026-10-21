@@ -1,0 +1,11 @@
+.ignite-app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--bg-color);
+}
+
+main {
+  flex-grow: 1;
+}
