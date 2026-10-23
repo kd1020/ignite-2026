@@ -274,7 +274,7 @@ finishingPosition, verificationStatus, maxTeamsM, notes }) {
       finishing_position: finishingPosition ?
 parseInt(finishingPosition, 10) : null,
       verification_status: verificationStatus,
-      max_teams_m: maxTeamsM ? parseInt(maxTeamsM, 10) : 12,
+      max_teams_m: maxTeamsM ? parseInt(maxTeamsM, 10) : 10,
       entered_by: user?.user?.id,
       notes: notes || null
     };
@@ -464,3 +464,368 @@ supabase.from('event_settings').select('*');
             throw err;
           }
         }
+
+const STAGE_STORAGE_KEY = 'ignite_tournament_stages';
+
+export async function getTournamentStages() {
+  try {
+    // 1. Try round_stages in event_settings
+    const { data: rsData } = await supabase
+      .from('event_settings')
+      .select('value')
+      .eq('key', 'round_stages')
+      .maybeSingle();
+
+    if (rsData?.value && typeof rsData.value === 'object') {
+      const stages = {
+        round1_completed: Boolean(rsData.value.round1_completed),
+        round2_started: Boolean(rsData.value.round2_started),
+        qualified_count: rsData.value.qualified_count || 0,
+        duels_per_team: rsData.value.duels_per_team || 4,
+        ...rsData.value
+      };
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem(STAGE_STORAGE_KEY, JSON.stringify(stages));
+        } catch (_) {}
+      }
+      return stages;
+    }
+
+    // 2. Try r1_scoring_config fallback in event_settings
+    const { data: r1Config } = await supabase
+      .from('event_settings')
+      .select('value')
+      .eq('key', 'r1_scoring_config')
+      .maybeSingle();
+
+    if (r1Config?.value?.tournament_stages) {
+      const stages = {
+        round1_completed: false,
+        round2_started: false,
+        qualified_count: 0,
+        duels_per_team: 4,
+        ...r1Config.value.tournament_stages
+      };
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          window.localStorage.setItem(STAGE_STORAGE_KEY, JSON.stringify(stages));
+        } catch (_) {}
+      }
+      return stages;
+    }
+
+    // 3. Fallback to localStorage
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const cached = window.localStorage.getItem(STAGE_STORAGE_KEY);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch (_) {}
+      }
+    }
+
+    return {
+      round1_completed: false,
+      round2_started: false,
+      qualified_count: 0,
+      duels_per_team: 4
+    };
+  } catch (err) {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const cached = window.localStorage.getItem(STAGE_STORAGE_KEY);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch (_) {}
+      }
+    }
+    return {
+      round1_completed: false,
+      round2_started: false,
+      qualified_count: 0,
+      duels_per_team: 4
+    };
+  }
+}
+
+async function persistTournamentStages(stages) {
+  // Always cache locally so UI updates instantaneously
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(STAGE_STORAGE_KEY, JSON.stringify(stages));
+    } catch (_) {}
+  }
+
+  const { data: user } = await supabase.auth.getUser();
+
+  // Strategy 1: Try UPDATE on round_stages (if row already exists)
+  try {
+    const { data: updateRes, error: updateErr } = await supabase
+      .from('event_settings')
+      .update({
+        value: stages,
+        updated_by: user?.user?.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('key', 'round_stages')
+      .select('key');
+
+    if (!updateErr && updateRes && updateRes.length > 0) {
+      return stages;
+    }
+  } catch (_) {}
+
+  // Strategy 2: Try UPSERT on round_stages (works once INSERT policy is granted)
+  try {
+    const { error: upsertErr } = await supabase
+      .from('event_settings')
+      .upsert({
+        key: 'round_stages',
+        value: stages,
+        description: 'Tracking status of tournament rounds',
+        updated_by: user?.user?.id,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+
+    if (!upsertErr) {
+      return stages;
+    }
+  } catch (_) {}
+
+  // Strategy 3: Update existing seeded row r1_scoring_config (guaranteed UPDATE permission without RLS violation)
+  try {
+    const { data: existingR1Config } = await supabase
+      .from('event_settings')
+      .select('value')
+      .eq('key', 'r1_scoring_config')
+      .maybeSingle();
+
+    const merged = {
+      ...(existingR1Config?.value || {}),
+      tournament_stages: stages
+    };
+
+    await supabase
+      .from('event_settings')
+      .update({
+        value: merged,
+        updated_by: user?.user?.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('key', 'r1_scoring_config');
+  } catch (fallbackErr) {
+    console.warn('[adminService] Stage fallback update warning:', fallbackErr);
+  }
+
+  return stages;
+}
+
+export async function endRound1({ reason }) {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    const current = await getTournamentStages();
+    const updated = {
+      ...current,
+      round1_completed: true,
+      round1_ended_at: new Date().toISOString()
+    };
+
+    await persistTournamentStages(updated);
+
+    try {
+      await supabase.from('audit_logs').insert({
+        admin_id: user?.user?.id,
+        action: 'ROUND_1_CONCLUDED',
+        entity_name: 'event_settings',
+        entity_id: 'round_stages',
+        previous_values: current,
+        new_values: updated,
+        reason: reason || 'Round 1 officially concluded by tournament administrator'
+      });
+    } catch (auditErr) {
+      console.warn('[adminService] Audit log warning:', auditErr);
+    }
+
+    return updated;
+  } catch (err) {
+    console.error('[adminService] endRound1 failure:', err);
+    throw err;
+  }
+}
+
+export async function reopenRound1({ reason }) {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+    const current = await getTournamentStages();
+    const updated = {
+      ...current,
+      round1_completed: false
+    };
+
+    await persistTournamentStages(updated);
+
+    try {
+      await supabase.from('audit_logs').insert({
+        admin_id: user?.user?.id,
+        action: 'ROUND_1_REOPENED',
+        entity_name: 'event_settings',
+        entity_id: 'round_stages',
+        previous_values: current,
+        new_values: updated,
+        reason: reason || 'Round 1 reopened by tournament administrator'
+      });
+    } catch (auditErr) {
+      console.warn('[adminService] Audit log warning:', auditErr);
+    }
+
+    return updated;
+  } catch (err) {
+    console.error('[adminService] reopenRound1 failure:', err);
+    throw err;
+  }
+}
+
+export async function getRound1Rankings() {
+  try {
+    const { data, error } = await supabase
+      .from('public_leaderboard')
+      .select('team_id, team_number, team_name, round1_score, rank')
+      .order('rank', { ascending: true });
+
+    if (!error && data && data.length > 0) return data;
+
+    // Fallback if public_leaderboard has no view entries yet
+    const { data: teams, error: teamsErr } = await supabase
+      .from('teams')
+      .select('id, team_number, team_name')
+      .eq('registration_status', 'approved');
+    if (teamsErr) throw teamsErr;
+
+    return (teams || []).map((t, idx) => ({
+      team_id: t.id,
+      team_number: t.team_number,
+      team_name: t.team_name,
+      round1_score: 0,
+      rank: idx + 1
+    }));
+  } catch (err) {
+    console.error('[adminService] getRound1Rankings failure:', err);
+    throw err;
+  }
+}
+
+export async function createRound2Fixtures({ qualifiedCount, duelCount, fixturesList, reason }) {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+
+    // 1. Delete existing matches first (due to ON DELETE RESTRICT from matches to fixtures)
+    await supabase.from('round2_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+    // 2. Delete existing fixtures
+    await supabase.from('round2_fixtures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+    // 3. Insert new fixtures
+    const fixturesPayload = fixturesList.map((f) => ({
+      slot_number: f.slot_number,
+      zone: f.zone,
+      team_a_id: f.team_a_id,
+      team_b_id: f.team_b_id
+    }));
+
+    const { data: insertedFixtures, error: insertFixturesErr } = await supabase
+      .from('round2_fixtures')
+      .insert(fixturesPayload)
+      .select('id, slot_number, zone, team_a_id, team_b_id');
+
+    if (insertFixturesErr) throw insertFixturesErr;
+
+    // 4. Create initial scheduled matches
+    const matchesPayload = insertedFixtures.map((f) => ({
+      fixture_id: f.id,
+      result_status: 'scheduled',
+      entered_by: user?.user?.id
+    }));
+
+    const { error: insertMatchesErr } = await supabase
+      .from('round2_matches')
+      .insert(matchesPayload);
+
+    if (insertMatchesErr) {
+      console.warn('[adminService] Warning inserting scheduled matches:', insertMatchesErr);
+    }
+
+    // 5. Update round_stages in event_settings
+    const current = await getTournamentStages();
+    const updated = {
+      ...current,
+      round1_completed: true,
+      round2_started: true,
+      round2_started_at: new Date().toISOString(),
+      qualified_count: qualifiedCount,
+      duels_per_team: duelCount
+    };
+
+    await persistTournamentStages(updated);
+
+    // 6. Log in audit trail
+    try {
+      await supabase.from('audit_logs').insert({
+        admin_id: user?.user?.id,
+        action: 'ROUND_2_STARTED',
+        entity_name: 'round2_fixtures',
+        entity_id: 'batch_launch',
+        previous_values: current,
+        new_values: { qualifiedCount, duelCount, totalFixtures: insertedFixtures.length },
+        reason: reason || `Launched Round 2 with ${qualifiedCount} teams across ${duelCount} duels per team.`
+      });
+    } catch (auditErr) {
+      console.warn('[adminService] Audit log warning:', auditErr);
+    }
+
+    return insertedFixtures;
+  } catch (err) {
+    console.error('[adminService] createRound2Fixtures failure:', err);
+    throw err;
+  }
+}
+
+export async function resetRound2Fixtures({ reason }) {
+  try {
+    const { data: user } = await supabase.auth.getUser();
+
+    // 1. Delete matches
+    await supabase.from('round2_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    // 2. Delete fixtures
+    await supabase.from('round2_fixtures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+    // 3. Update stage
+    const current = await getTournamentStages();
+    const updated = {
+      ...current,
+      round2_started: false
+    };
+
+    await persistTournamentStages(updated);
+
+    try {
+      await supabase.from('audit_logs').insert({
+        admin_id: user?.user?.id,
+        action: 'ROUND_2_RESET',
+        entity_name: 'round2_fixtures',
+        entity_id: 'reset',
+        previous_values: current,
+        new_values: updated,
+        reason: reason || 'Reset Round 2 fixtures'
+      });
+    } catch (auditErr) {
+      console.warn('[adminService] Audit log warning:', auditErr);
+    }
+
+    return updated;
+  } catch (err) {
+    console.error('[adminService] resetRound2Fixtures failure:', err);
+    throw err;
+  }
+}
+

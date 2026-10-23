@@ -72,7 +72,8 @@ INSERT INTO public.event_settings (key, value, description) VALUES
 ('registration_status', '{"open": true, "max_teams": 64}', 'Controls whether new public squad registrations are accepted.'),
 ('leaderboard_visibility', '{"public_visible": true, "show_r2_swings": true, "frozen": false}', 'Controls public visibility and freezing of tournament standings.'),
 ('prize_pool', '{"display_text": "A PRIZE POOL WORTH THE FIGHT."}', 'Configurable prize pool messaging displayed across website.'),
-('r1_scoring_config', '{"default_M": 12, "points_multiplier": 1000}', 'Parameters for Round 1 positional ranking formula: (M - k + 1) * 1000.'),
+('r1_scoring_config', '{"default_M": 10, "points_multiplier": 1000}', 'Parameters for Round 1 positional ranking formula: (M - k + 1) * 1000.'),
+('round_stages', '{"round1_completed": false, "round2_started": false, "qualified_count": 0, "duels_per_team": 4}', 'Tracking status of tournament rounds.'),
 ('public_announcements', '{"active": true, "banner_text": "IGNITE 2026 REGISTRATION IS CURRENTLY LIVE. SECURE YOUR ROSTER."}', 'Global banner message displayed on header/marquee.')
 ON CONFLICT (key) DO NOTHING;
 
@@ -84,18 +85,15 @@ CREATE TABLE IF NOT EXISTS public.teams (
   team_name TEXT NOT NULL UNIQUE,
   team_leader_name TEXT NOT NULL,
   team_leader_mobile TEXT NOT NULL,
-  registration_status team_registration_status NOT NULL DEFAULT
-'pending',
+  registration_status team_registration_status NOT NULL DEFAULT 'pending',
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
 
-CREATE INDEX IF NOT EXISTS idx_teams_status ON
-public.teams(registration_status);
-CREATE INDEX IF NOT EXISTS idx_teams_team_number ON
-public.teams(team_number);
+CREATE INDEX IF NOT EXISTS idx_teams_status ON public.teams(registration_status);
+CREATE INDEX IF NOT EXISTS idx_teams_team_number ON public.teams(team_number);
 
 
 -- D. TEAM MEMBERS
@@ -107,8 +105,7 @@ CREATE TABLE IF NOT EXISTS public.team_members (
 );
 
 
-CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON
-public.team_members(team_id);
+CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON public.team_members(team_id);
 
 
 -- E. ROUND 1 SCORES (The Gauntlet)
@@ -116,10 +113,9 @@ CREATE TABLE IF NOT EXISTS public.round1_scores (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   team_id UUID NOT NULL REFERENCES public.teams(id) ON DELETE CASCADE,
   zone zone_code NOT NULL,
-  finishing_position INTEGER CHECK (finishing_position IS NULL OR
-finishing_position > 0),
+  finishing_position INTEGER CHECK (finishing_position IS NULL OR finishing_position > 0),
   verification_status verification_status NOT NULL DEFAULT 'verified',
-  max_teams_m INTEGER NOT NULL DEFAULT 12 CHECK (max_teams_m > 0),
+  max_teams_m INTEGER NOT NULL DEFAULT 10 CHECK (max_teams_m > 0),
   awarded_points INTEGER NOT NULL DEFAULT 0,
   entered_by UUID REFERENCES auth.users(id),
   notes TEXT,
@@ -129,16 +125,14 @@ finishing_position > 0),
 );
 
 
-CREATE INDEX IF NOT EXISTS idx_r1_scores_team ON
-public.round1_scores(team_id);
-CREATE INDEX IF NOT EXISTS idx_r1_scores_zone ON
-public.round1_scores(zone);
+CREATE INDEX IF NOT EXISTS idx_r1_scores_team ON public.round1_scores(team_id);
+CREATE INDEX IF NOT EXISTS idx_r1_scores_zone ON public.round1_scores(zone);
 
 
 -- F. ROUND 2 FIXTURES (The Hit List - Preserved Official Schedule)
 CREATE TABLE IF NOT EXISTS public.round2_fixtures (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slot_number INTEGER NOT NULL CHECK (slot_number BETWEEN 1 AND 4),
+  slot_number INTEGER NOT NULL CHECK (slot_number >= 1),
   zone zone_code NOT NULL,
   team_a_id UUID NOT NULL REFERENCES public.teams(id) ON DELETE
 RESTRICT,
@@ -434,8 +428,10 @@ CREATE POLICY "Public read-only settings"
 
 DROP POLICY IF EXISTS "Admins can update event settings" ON
 public.event_settings;
-CREATE POLICY "Admins can update event settings"
-  ON public.event_settings FOR UPDATE
+DROP POLICY IF EXISTS "Admins can manage event settings" ON
+public.event_settings;
+CREATE POLICY "Admins can manage event settings"
+  ON public.event_settings FOR ALL
   TO authenticated
   USING (public.is_admin())
   WITH CHECK (public.is_admin());

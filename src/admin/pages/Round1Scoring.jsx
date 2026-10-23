@@ -1,8 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getTeams, getRound1Scores, submitRound1Score,
-correctRound1ScoreWithAudit } from '../../services/adminService';
+import {
+  getTeams,
+  getRound1Scores,
+  submitRound1Score,
+  correctRound1ScoreWithAudit,
+  getTournamentStages,
+  endRound1,
+  reopenRound1
+} from '../../services/adminService';
 import './Round1Scoring.css';
-
 
 export default function Round1Scoring() {
   const [scores, setScores] = useState([]);
@@ -10,16 +16,15 @@ export default function Round1Scoring() {
   const [selectedZone, setSelectedZone] = useState('all');
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null);
-
+  const [stageInfo, setStageInfo] = useState({ round1_completed: false });
 
   const [formTeamId, setFormTeamId] = useState('');
   const [formZone, setFormZone] = useState('A');
   const [formPosition, setFormPosition] = useState('');
   const [formStatus, setFormStatus] = useState('verified');
-  const [formMaxM, setFormMaxM] = useState(12);
+  const [formMaxM, setFormMaxM] = useState(10);
   const [formNotes, setFormNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
 
   const [correctionTarget, setCorrectionTarget] = useState(null);
   const [correctPosition, setCorrectPosition] = useState('');
@@ -27,19 +32,27 @@ export default function Round1Scoring() {
   const [correctReason, setCorrectReason] = useState('');
   const [isCorrecting, setIsCorrecting] = useState(false);
 
+  const [showEndRoundModal, setShowEndRoundModal] = useState(false);
+  const [endRoundReason, setEndRoundReason] = useState('');
+  const [isEndingRound, setIsEndingRound] = useState(false);
+
+  const [showReopenModal, setShowReopenModal] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
+  const [isReopeningRound, setIsReopeningRound] = useState(false);
 
   const ZONES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [scoresData, teamsData] = await Promise.all([
+      const [scoresData, teamsData, stagesData] = await Promise.all([
         getRound1Scores(selectedZone),
-        getTeams({ statusFilter: 'approved' })
+        getTeams({ statusFilter: 'approved' }),
+        getTournamentStages()
       ]);
       setScores(scoresData);
       setApprovedTeams(teamsData);
+      setStageInfo(stagesData);
       if (teamsData.length > 0 && !formTeamId) {
         setFormTeamId(teamsData[0].id);
       }
@@ -151,19 +164,102 @@ ${correctionTarget.zone} successfully corrected with audit trail.`
   };
 
 
+  const handleEndRound1Submit = async () => {
+    if (!endRoundReason.trim() || endRoundReason.trim().length < 4) {
+      alert('An audit log reason (min 4 characters) is required to conclude Round 1.');
+      return;
+    }
+
+    setIsEndingRound(true);
+    try {
+      const updated = await endRound1({ reason: endRoundReason });
+      setStageInfo(updated);
+      setShowEndRoundModal(false);
+      setEndRoundReason('');
+      setNotification({
+        type: 'success',
+        message: 'Round 1 has been officially concluded! Standings are locked for Round 2 qualification.'
+      });
+      loadData();
+    } catch (err) {
+      setNotification({ type: 'error', message: err.message || 'Failed to end Round 1.' });
+    } finally {
+      setIsEndingRound(false);
+    }
+  };
+
+  const handleReopenRound1Submit = async () => {
+    if (!reopenReason.trim() || reopenReason.trim().length < 4) {
+      alert('An audit log reason (min 4 characters) is required to reopen Round 1.');
+      return;
+    }
+
+    setIsReopeningRound(true);
+    try {
+      const updated = await reopenRound1({ reason: reopenReason });
+      setStageInfo(updated);
+      setShowReopenModal(false);
+      setReopenReason('');
+      setNotification({
+        type: 'success',
+        message: 'Round 1 reopened! You can continue entering and adjusting zone scores.'
+      });
+      loadData();
+    } catch (err) {
+      setNotification({ type: 'error', message: err.message || 'Failed to reopen Round 1.' });
+    } finally {
+      setIsReopeningRound(false);
+    }
+  };
+
   return (
     <div className="r1-scoring-page">
       <div className="page-header-row">
         <div>
-          <span className="comic-badge comic-tag-yellow">TIMED SECTOR
-SCORING</span>
+          <span className="comic-badge comic-tag-yellow">TIMED SECTOR SCORING</span>
           <h1 className="page-title">ROUND 1: THE GAUNTLET</h1>
         </div>
-
 
         <div className="formula-pill">
           <code>Score = (M - k + 1) × 1,000</code>
         </div>
+      </div>
+
+      {/* Round 1 Status Control Banner */}
+      <div className={`round-status-banner comic-panel ${stageInfo.round1_completed ? 'concluded' : 'active'}`}>
+        <div className="status-meta">
+          <span className={`status-dot ${stageInfo.round1_completed ? 'locked' : 'online'}`}></span>
+          <div>
+            <h3 className="status-heading">
+              {stageInfo.round1_completed
+                ? 'ROUND 1 CONCLUDED // STANDINGS LOCKED'
+                : 'ROUND 1 ACTIVE // IN PROGRESS'}
+            </h3>
+            <p className="status-sub">
+              {stageInfo.round1_completed
+                ? `Official Gauntlet performance is locked for Round 2 qualification.${stageInfo.round1_ended_at ? ` (Ended: ${new Date(stageInfo.round1_ended_at).toLocaleTimeString()})` : ''}`
+                : `Active zone scoring in progress (${scores.length} score entries recorded across ${approvedTeams.length} approved squads).`}
+            </p>
+          </div>
+        </div>
+
+        {stageInfo.round1_completed ? (
+          <button
+            onClick={() => setShowReopenModal(true)}
+            className="comic-btn reopen-btn"
+            title="Reopen Round 1 for further scoring"
+          >
+            🔓 REOPEN ROUND 1
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowEndRoundModal(true)}
+            className="comic-btn end-round-btn"
+            title="Conclude Round 1 and lock standings"
+          >
+            🏁 END ROUND 1
+          </button>
+        )}
       </div>
 
 
@@ -449,7 +545,7 @@ audit trail with your admin ID.
 
 
                     <div className="modal-footer">
-                      <button onClick={closeCorrectionModal} className="comic-         btn modal-cancel-btn">
+                      <button onClick={closeCorrectionModal} className="comic-btn modal-cancel-btn">
                         CANCEL
                       </button>
                       <button
@@ -457,13 +553,115 @@ audit trail with your admin ID.
                         disabled={isCorrecting}
                         className="comic-btn comic-btn-primary modal-save-btn"
                       >
-                        {isCorrecting ? 'APPLYING AUDITED REVISION...' :
-        'CONFIRM CORRECTION'}
+                        {isCorrecting ? 'APPLYING AUDITED REVISION...' : 'CONFIRM CORRECTION'}
                       </button>
                     </div>
                   </div>
                 </div>
               )}
+
+      {/* Modal: Conclude Round 1 */}
+      {showEndRoundModal && (
+        <div className="modal-backdrop">
+          <div className="modal-card comic-panel">
+            <div className="modal-header">
+              <h3 className="modal-title">OFFICIALLY CONCLUDE ROUND 1</h3>
+              <button onClick={() => setShowEndRoundModal(false)} className="modal-close-btn">✕</button>
             </div>
-          );
-        }
+
+            <div className="modal-body">
+              <p className="modal-desc">
+                Concluding Round 1 locks the Gauntlet standings and finalizes the team rankings used to qualify squads for Round 2 duels.
+              </p>
+
+              <div className="end-round-stats-box">
+                <div className="stat-line">
+                  <span>Approved Participating Squads:</span>
+                  <strong>{approvedTeams.length}</strong>
+                </div>
+                <div className="stat-line">
+                  <span>Total Zone Scores Recorded:</span>
+                  <strong>{scores.length} / {approvedTeams.length * 8}</strong>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>MANDATORY AUDIT REASON *</label>
+                <textarea
+                  value={endRoundReason}
+                  onChange={(e) => setEndRoundReason(e.target.value)}
+                  placeholder="e.g. All 8 timed zones completed and verified by zone marshals."
+                  className="comic-input"
+                  rows="3"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                onClick={() => setShowEndRoundModal(false)}
+                className="comic-btn modal-cancel-btn"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleEndRound1Submit}
+                disabled={isEndingRound}
+                className="comic-btn comic-btn-primary modal-save-btn bg-red"
+              >
+                {isEndingRound ? 'CONCLUDING ROUND 1...' : 'CONFIRM & LOCK ROUND 1'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Reopen Round 1 */}
+      {showReopenModal && (
+        <div className="modal-backdrop">
+          <div className="modal-card comic-panel">
+            <div className="modal-header">
+              <h3 className="modal-title">REOPEN ROUND 1</h3>
+              <button onClick={() => setShowReopenModal(false)} className="modal-close-btn">✕</button>
+            </div>
+
+            <div className="modal-body">
+              <p className="modal-desc">
+                Reopening Round 1 unlocks score entry so tournament marshals can make further adjustments or enter missing zone records.
+              </p>
+
+              <div className="form-group">
+                <label>MANDATORY AUDIT REASON *</label>
+                <textarea
+                  value={reopenReason}
+                  onChange={(e) => setReopenReason(e.target.value)}
+                  placeholder="e.g. Reopened to record late stopwatch verification for Zone G."
+                  className="comic-input"
+                  rows="3"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                onClick={() => setShowReopenModal(false)}
+                className="comic-btn modal-cancel-btn"
+              >
+                CANCEL
+              </button>
+              <button
+                onClick={handleReopenRound1Submit}
+                disabled={isReopeningRound}
+                className="comic-btn comic-btn-primary modal-save-btn"
+              >
+                {isReopeningRound ? 'REOPENING...' : 'CONFIRM REOPEN'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
