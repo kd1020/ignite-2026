@@ -47,23 +47,20 @@ import React, { useState, useEffect } from 'react';
     setSelectedTeam(team);
     setActionType('status');
     setModalInput(team.registration_status);
-    setModalReason('');
+    setModalReason('Team registration status updated by admin');
   };
-
 
   const openNumberModal = (team) => {
     setSelectedTeam(team);
     setActionType('number');
     setModalInput(team.team_number || '');
-    setModalReason('');
+    setModalReason('Team ID number updated by admin');
   };
-
 
   const openRosterModal = (team) => {
     setSelectedTeam(team);
     setActionType('roster');
   };
-
 
   const closeModal = () => {
     setSelectedTeam(null);
@@ -72,31 +69,25 @@ import React, { useState, useEffect } from 'react';
     setModalReason('');
   };
 
-
   const handleModalSave = async () => {
-    if (!modalReason.trim() || modalReason.trim().length < 4) {
-      alert('An audit reason of at least 4 characters is mandatory.');
-      return;
-    }
-
+    const defaultReason = actionType === 'status'
+      ? 'Team registration status updated by admin'
+      : 'Team ID number updated by admin';
+    const finalReason = modalReason.trim() || defaultReason;
 
     setIsSubmitting(true);
     try {
       if (actionType === 'status') {
-        await updateTeamStatus(selectedTeam.id, modalInput,
-modalReason);
-        setNotification({ type: 'success', message: `Status updated for
-${selectedTeam.team_name}.` });
+        await updateTeamStatus(selectedTeam.id, modalInput, finalReason);
+        setNotification({ type: 'success', message: `Status updated for ${selectedTeam.team_name}.` });
       } else if (actionType === 'number') {
         if (!modalInput.trim()) {
           alert('Team number cannot be empty.');
           setIsSubmitting(false);
           return;
         }
-        await assignTeamNumber(selectedTeam.id, modalInput,
-modalReason);
-        setNotification({ type: 'success', message: `Assigned ID
-${modalInput} to ${selectedTeam.team_name}.` });
+        await assignTeamNumber(selectedTeam.id, modalInput, finalReason);
+        setNotification({ type: 'success', message: `Assigned ID ${modalInput} to ${selectedTeam.team_name}.` });
       }
       closeModal();
       fetchTeamsData();
@@ -321,7 +312,7 @@ btn">✕</button>
                     />
                   </div>
                   <div className="form-group">
-                    <label>AUDIT LOG REASON *</label>
+                    <label>AUDIT LOG REASON (OPTIONAL)</label>
                     <textarea
                       value={modalReason}
                       onChange={(e) => setModalReason(e.target.value)}
@@ -351,7 +342,7 @@ and document verification."
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>AUDIT LOG REASON *</label>
+                    <label>AUDIT LOG REASON (OPTIONAL)</label>
                     <textarea
                       value={modalReason}
                       onChange={(e) => setModalReason(e.target.value)}

@@ -20,24 +20,24 @@ export default function Round1Scoring() {
 
   const [formTeamId, setFormTeamId] = useState('');
   const [formZone, setFormZone] = useState('A');
-  const [formPosition, setFormPosition] = useState('');
+  const [formScore, setFormScore] = useState('');
   const [formStatus, setFormStatus] = useState('verified');
   const [formMaxM, setFormMaxM] = useState(10);
   const [formNotes, setFormNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [correctionTarget, setCorrectionTarget] = useState(null);
-  const [correctPosition, setCorrectPosition] = useState('');
+  const [correctScore, setCorrectScore] = useState('');
   const [correctStatus, setCorrectStatus] = useState('verified');
   const [correctReason, setCorrectReason] = useState('');
   const [isCorrecting, setIsCorrecting] = useState(false);
 
   const [showEndRoundModal, setShowEndRoundModal] = useState(false);
-  const [endRoundReason, setEndRoundReason] = useState('');
+  const [endRoundReason, setEndRoundReason] = useState('Round 1 officially concluded and standings locked for Round 2.');
   const [isEndingRound, setIsEndingRound] = useState(false);
 
   const [showReopenModal, setShowReopenModal] = useState(false);
-  const [reopenReason, setReopenReason] = useState('');
+  const [reopenReason, setReopenReason] = useState('Round 1 reopened by tournament administrator.');
   const [isReopeningRound, setIsReopeningRound] = useState(false);
 
   const ZONES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -63,20 +63,32 @@ export default function Round1Scoring() {
     }
   };
 
-
   useEffect(() => {
     loadData();
   }, [selectedZone]);
 
+  // Sync form when squad or zone changes
+  useEffect(() => {
+    if (!formTeamId || !formZone) return;
+    const existing = scores.find((s) => s.team_id === formTeamId && s.zone === formZone);
+    if (existing) {
+      setFormScore(existing.awarded_points != null ? existing.awarded_points.toString() : '');
+      setFormStatus(existing.verification_status || 'verified');
+      setFormMaxM(existing.max_teams_m || 10);
+      setFormNotes(existing.notes || '');
+    } else {
+      setFormScore('');
+      setFormStatus('verified');
+      setFormMaxM(10);
+      setFormNotes('');
+    }
+  }, [formTeamId, formZone, scores]);
 
   const livePreviewScore = useMemo(() => {
     if (formStatus !== 'verified') return 0;
-    const k = parseInt(formPosition, 10);
-    const m = parseInt(formMaxM, 10);
-    if (!k || k <= 0 || !m || k > m) return 0;
-    return (m - k + 1) * 1000;
-  }, [formPosition, formMaxM, formStatus]);
-
+    const pts = parseInt(formScore, 10);
+    return isNaN(pts) ? 0 : Math.max(0, pts);
+  }, [formScore, formStatus]);
 
   const handleSubmitScore = async (e) => {
     e.preventDefault();
@@ -85,27 +97,23 @@ export default function Round1Scoring() {
       return;
     }
 
-
     setIsSubmitting(true);
     try {
       await submitRound1Score({
         teamId: formTeamId,
         zone: formZone,
-        finishingPosition: formPosition,
+        score: formScore,
         verificationStatus: formStatus,
         maxTeamsM: formMaxM,
         notes: formNotes
       });
 
-
       setNotification({
         type: 'success',
-        message: `Saved Zone ${formZone} score for team. Awarded points:
-${livePreviewScore.toLocaleString()} pts.`
+        message: `Saved Zone ${formZone} score for team. Awarded points: ${livePreviewScore.toLocaleString()} pts.`
       });
 
-
-      setFormPosition('');
+      setFormScore('');
       setFormNotes('');
       loadData();
     } catch (err) {
@@ -115,67 +123,51 @@ ${livePreviewScore.toLocaleString()} pts.`
     }
   };
 
-
   const openCorrectionModal = (scoreRecord) => {
     setCorrectionTarget(scoreRecord);
-    setCorrectPosition(scoreRecord.finishing_position || '');
+    setCorrectScore(scoreRecord.awarded_points != null ? scoreRecord.awarded_points.toString() : '');
     setCorrectStatus(scoreRecord.verification_status);
-    setCorrectReason('');
+    setCorrectReason('Score corrected by tournament administrator');
   };
-
 
   const closeCorrectionModal = () => {
     setCorrectionTarget(null);
-    setCorrectPosition('');
-    setCorrectReason('');
+    setCorrectScore('');
+    setCorrectReason('Score corrected by tournament administrator');
   };
 
-
   const handleCorrectionSubmit = async () => {
-    if (!correctReason.trim() || correctReason.trim().length < 5) {
-      alert('An audit reason of at least 5 characters is required for score changes.');
-      return;
-    }
-
-
     setIsCorrecting(true);
+    const finalReason = correctReason.trim() || 'Score corrected by tournament administrator';
     try {
       await correctRound1ScoreWithAudit({
         scoreId: correctionTarget.id,
-        newPosition: correctPosition,
+        newScore: correctScore,
         newStatus: correctStatus,
-        reason: correctReason
+        reason: finalReason
       });
       setNotification({
         type: 'success',
-        message: `Score for ${correctionTarget.teams?.team_name} in Zone
-${correctionTarget.zone} successfully corrected with audit trail.`
+        message: `Score for ${correctionTarget.teams?.team_name} in Zone ${correctionTarget.zone} successfully corrected with audit trail.`
       });
-
 
       closeCorrectionModal();
       loadData();
     } catch (err) {
-      setNotification({ type: 'error', message: err.message ||
-'Correction failed.' });
+      setNotification({ type: 'error', message: err.message || 'Correction failed.' });
     } finally {
       setIsCorrecting(false);
     }
   };
 
-
   const handleEndRound1Submit = async () => {
-    if (!endRoundReason.trim() || endRoundReason.trim().length < 4) {
-      alert('An audit log reason (min 4 characters) is required to conclude Round 1.');
-      return;
-    }
-
     setIsEndingRound(true);
+    const finalReason = endRoundReason.trim() || 'Round 1 officially concluded and standings locked for Round 2.';
     try {
-      const updated = await endRound1({ reason: endRoundReason });
+      const updated = await endRound1({ reason: finalReason });
       setStageInfo(updated);
       setShowEndRoundModal(false);
-      setEndRoundReason('');
+      setEndRoundReason('Round 1 officially concluded and standings locked for Round 2.');
       setNotification({
         type: 'success',
         message: 'Round 1 has been officially concluded! Standings are locked for Round 2 qualification.'
@@ -189,17 +181,13 @@ ${correctionTarget.zone} successfully corrected with audit trail.`
   };
 
   const handleReopenRound1Submit = async () => {
-    if (!reopenReason.trim() || reopenReason.trim().length < 4) {
-      alert('An audit log reason (min 4 characters) is required to reopen Round 1.');
-      return;
-    }
-
     setIsReopeningRound(true);
+    const finalReason = reopenReason.trim() || 'Round 1 reopened by tournament administrator.';
     try {
-      const updated = await reopenRound1({ reason: reopenReason });
+      const updated = await reopenRound1({ reason: finalReason });
       setStageInfo(updated);
       setShowReopenModal(false);
-      setReopenReason('');
+      setReopenReason('Round 1 reopened by tournament administrator.');
       setNotification({
         type: 'success',
         message: 'Round 1 reopened! You can continue entering and adjusting zone scores.'
@@ -221,7 +209,7 @@ ${correctionTarget.zone} successfully corrected with audit trail.`
         </div>
 
         <div className="formula-pill">
-          <code>Score = (M - k + 1) × 1,000</code>
+          <code>🎯 DIRECT ZONE SCORING</code>
         </div>
       </div>
 
@@ -262,23 +250,19 @@ ${correctionTarget.zone} successfully corrected with audit trail.`
         )}
       </div>
 
-
       {notification && (
         <div className={`notification-bar ${notification.type}`}>
           <span>{notification.message}</span>
-          <button onClick={() => setNotification(null)}
-className="notif-close">✕</button>
+          <button onClick={() => setNotification(null)} className="notif-close">✕</button>
         </div>
       )}
-
 
       <div className="r1-scoring-grid">
         <div className="entry-card comic-panel">
           <div className="card-top-bar">
             <span className="badge-pill">SCORE ENTRY CONSOLE</span>
           </div>
-          <h3 className="panel-title">RECORD FINISHING POSITION</h3>
-
+          <h3 className="panel-title">RECORD ZONE SCORE</h3>
 
           <form onSubmit={handleSubmitScore} className="scoring-form">
             <div className="form-group">
@@ -291,13 +275,11 @@ className="notif-close">✕</button>
               >
                 {approvedTeams.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.team_number ? `[${t.team_number}] ` : ''}
-{t.team_name}
+                    {t.team_number ? `[${t.team_number}] ` : ''}{t.team_name}
                   </option>
                 ))}
               </select>
             </div>
-
 
             <div className="form-row-2">
               <div className="form-group">
@@ -313,6 +295,34 @@ className="notif-close">✕</button>
                 </select>
               </div>
 
+              <div className="form-group">
+                <label>ZONE SCORE (PTS) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 10000"
+                  value={formScore}
+                  onChange={(e) => setFormScore(e.target.value)}
+                  className="comic-input"
+                  required={formStatus === 'verified'}
+                />
+              </div>
+            </div>
+
+            <div className="form-row-2">
+              <div className="form-group">
+                <label>VERIFICATION STATUS *</label>
+                <select
+                  value={formStatus}
+                  onChange={(e) => setFormStatus(e.target.value)}
+                  className="comic-input"
+                >
+                  <option value="verified">VERIFIED (TIMED)</option>
+                  <option value="unverified">UNVERIFIED (0 PTS)</option>
+                  <option value="did_not_finish">DID NOT FINISH (DNF)</option>
+                  <option value="disqualified">DISQUALIFIED (DQ)</option>
+                </select>
+              </div>
 
               <div className="form-group">
                 <label>MAX TEAMS IN ZONE (M)</label>
@@ -328,54 +338,17 @@ className="notif-close">✕</button>
               </div>
             </div>
 
-
-            <div className="form-row-2">
-              <div className="form-group">
-                <label>FINISHING RANK (k) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="e.g. 1 (1st place)"
-                  value={formPosition}
-                  onChange={(e) => setFormPosition(e.target.value)}
-                  className="comic-input"
-                  required={formStatus === 'verified'}
-                />
-              </div>
-
-
-              <div className="form-group">
-                <label>VERIFICATION STATUS *</label>
-                <select
-                  value={formStatus}
-                  onChange={(e) => setFormStatus(e.target.value)}
-                  className="comic-input"
-                >
-                  <option value="verified">VERIFIED (TIMED)</option>
-                  <option value="unverified">UNVERIFIED (0 PTS)</option>
-                  <option value="did_not_finish">DID NOT FINISH (DNF)
-</option>
-                  <option value="disqualified">DISQUALIFIED (DQ)
-</option>
-                </select>
-              </div>
-            </div>
             <div className="score-preview-box">
-              <div className="preview-label">CALCULATED SCORE PREVIEW:
-</div>
-              <div className="preview-points">
-{livePreviewScore.toLocaleString()} PTS</div>
+              <div className="preview-label">DIRECT SCORE PREVIEW:</div>
+              <div className="preview-points">{livePreviewScore.toLocaleString()} PTS</div>
               <div className="preview-formula-audit">
-                {formStatus === 'verified' && formPosition ? (
-                  <span>({formMaxM} - {formPosition} + 1) × 1,000 =
-{livePreviewScore.toLocaleString()}</span>
+                {formStatus === 'verified' ? (
+                  <span>Manual score allocated for Zone {formZone}</span>
                 ) : (
-                  <span>Status = {formStatus.toUpperCase()} (Zero Points
-Rule Enforced)</span>
+                  <span>Status = {formStatus.toUpperCase()} (Zero Points Rule Enforced)</span>
                 )}
               </div>
             </div>
-
 
             <div className="form-group">
               <label>OPTIONAL SCORER NOTES</label>
@@ -388,7 +361,6 @@ Rule Enforced)</span>
               />
             </div>
 
-
             <button
               type="submit"
               disabled={isSubmitting}
@@ -399,15 +371,13 @@ Rule Enforced)</span>
           </form>
         </div>
 
-
         <div className="scores-table-card comic-panel">
           <div className="table-header-block">
             <h3 className="panel-title">RECORDED ZONE PERFORMANCES</h3>
             <div className="zone-filter-pills">
               <button
                 onClick={() => setSelectedZone('all')}
-                className={`zone-pill ${selectedZone === 'all' ?
-'active' : ''}`}
+                className={`zone-pill ${selectedZone === 'all' ? 'active' : ''}`}
               >
                 ALL
               </button>
@@ -415,8 +385,7 @@ Rule Enforced)</span>
                 <button
                   key={z}
                   onClick={() => setSelectedZone(z)}
-                  className={`zone-pill ${selectedZone === z ? 'active'
-: ''}`}
+                  className={`zone-pill ${selectedZone === z ? 'active' : ''}`}
                 >
                   {z}
                 </button>
@@ -424,16 +393,15 @@ Rule Enforced)</span>
             </div>
           </div>
 
-
           <div className="table-responsive">
             <table className="admin-table">
               <thead>
                 <tr>
                   <th>ZONE</th>
-                  <th>TEAM</th>
-                  <th>RANK (k)</th>
+                  <th>SQUAD</th>
+                  <th>SCORE (PTS)</th>
                   <th>STATUS</th>
-                  <th>POINTS</th>
+                  <th>NOTES</th>
                   <th>ACTION</th>
                 </tr>
               </thead>
@@ -446,19 +414,18 @@ Rule Enforced)</span>
                       </td>
                       <td>
                         <strong>{s.teams?.team_name}</strong>
-                        {s.teams?.team_number && <span className="team- sub-num"> [{s.teams.team_number}]</span>}
+                        {s.teams?.team_number && <span className="team-sub-num"> [{s.teams.team_number}]</span>}
                       </td>
-                      <td>{s.finishing_position ?
-`#${s.finishing_position}` : 'N/A'}</td>
                       <td>
-                        <span className={`status-pill-badge
-${s.verification_status}`}>
+                        <strong className="pts-val">{Number(s.awarded_points || 0).toLocaleString()} PTS</strong>
+                      </td>
+                      <td>
+                        <span className={`status-pill-badge ${s.verification_status}`}>
                           {s.verification_status.toUpperCase()}
                         </span>
                       </td>
                       <td>
-                        <strong className="pts-val">
-{s.awarded_points.toLocaleString()}</strong>
+                        <span className="scorer-note-text" title={s.notes || ''}>{s.notes || '—'}</span>
                       </td>
                       <td>
                         <button
@@ -474,8 +441,7 @@ ${s.verification_status}`}>
                 ) : (
                   <tr>
                     <td colSpan="6" className="empty-state-cell">
-                      No scores recorded yet for the selected zone
-filter.
+                      No scores recorded yet for the selected zone filter.
                     </td>
                   </tr>
                 )}
@@ -484,36 +450,34 @@ filter.
           </div>
         </div>
       </div>
+
       {correctionTarget && (
         <div className="modal-backdrop">
           <div className="modal-card comic-panel">
             <div className="modal-header">
               <h3 className="modal-title">
-                CORRECT SCORE: {correctionTarget.teams?.team_name} (ZONE
-{correctionTarget.zone})
+                CORRECT SCORE: {correctionTarget.teams?.team_name} (ZONE {correctionTarget.zone})
               </h3>
-              <button onClick={closeCorrectionModal} className="modal- close-btn">✕</button>
+              <button onClick={closeCorrectionModal} className="modal-close-btn">✕</button>
             </div>
-
 
             <div className="modal-body">
               <div className="correction-warning">
-                ⚠ All revisions are permanently logged to the immutable
-audit trail with your admin ID.
+                ⚠ All revisions are permanently logged to the immutable audit trail with your admin ID.
               </div>
-
 
               <div className="form-group">
-                <label>NEW FINISHING POSITION (k)</label>
+                <label>NEW ZONE SCORE (PTS) *</label>
                 <input
                   type="number"
-                  min="1"
-                  value={correctPosition}
-                  onChange={(e) => setCorrectPosition(e.target.value)}
+                  min="0"
+                  placeholder="e.g. 10000"
+                  value={correctScore}
+                  onChange={(e) => setCorrectScore(e.target.value)}
                   className="comic-input"
+                  required={correctStatus === 'verified'}
                 />
               </div>
-
 
               <div className="form-group">
                 <label>NEW VERIFICATION STATUS</label>
@@ -531,14 +495,13 @@ audit trail with your admin ID.
 
 
                       <div className="form-group">
-                        <label>MANDATORY AUDIT REASON *</label>
+                        <label>AUDIT REASON (OPTIONAL)</label>
                         <textarea
                           value={correctReason}
                           onChange={(e) => setCorrectReason(e.target.value)}
-                          placeholder="e.g. Scorer timing sheet typo; adjusted         from #3 to #2 after official stopwatch re-check."
+                          placeholder="e.g. Scorer timing sheet adjustment or stopwatch verification."
                           className="comic-input"
                           rows="3"
-                          required
                         />
                       </div>
                     </div>
@@ -586,14 +549,13 @@ audit trail with your admin ID.
               </div>
 
               <div className="form-group">
-                <label>MANDATORY AUDIT REASON *</label>
+                <label>AUDIT REASON (OPTIONAL)</label>
                 <textarea
                   value={endRoundReason}
                   onChange={(e) => setEndRoundReason(e.target.value)}
                   placeholder="e.g. All 8 timed zones completed and verified by zone marshals."
                   className="comic-input"
                   rows="3"
-                  required
                 />
               </div>
             </div>
@@ -632,14 +594,13 @@ audit trail with your admin ID.
               </p>
 
               <div className="form-group">
-                <label>MANDATORY AUDIT REASON *</label>
+                <label>AUDIT REASON (OPTIONAL)</label>
                 <textarea
                   value={reopenReason}
                   onChange={(e) => setReopenReason(e.target.value)}
                   placeholder="e.g. Reopened to record late stopwatch verification for Zone G."
                   className="comic-input"
                   rows="3"
-                  required
                 />
               </div>
             </div>

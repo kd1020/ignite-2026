@@ -192,23 +192,23 @@ public.audit_logs(created_at DESC);
 -- ====================================================================
 
 
--- Function: Compute Round 1 Points using official formula: Score = (M - k + 1) * 1,000
+-- Function: Compute Round 1 Points (Supports Direct Score Entry and Positional Fallback)
 CREATE OR REPLACE FUNCTION public.fn_calculate_round1_points()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF NEW.verification_status = 'verified' AND NEW.finishing_position IS
-NOT NULL THEN
-    IF NEW.finishing_position <= NEW.max_teams_m THEN
-      NEW.awarded_points := (NEW.max_teams_m - NEW.finishing_position +
-1) * 1000;
+  IF NEW.verification_status = 'verified' THEN
+    -- If awarded_points is directly specified, preserve it
+    IF NEW.awarded_points IS NOT NULL AND NEW.awarded_points > 0 THEN
+      NULL; -- Keep direct score as entered
+    ELSIF NEW.finishing_position IS NOT NULL AND NEW.finishing_position <= NEW.max_teams_m THEN
+      NEW.awarded_points := (NEW.max_teams_m - NEW.finishing_position + 1) * 1000;
     ELSE
-      NEW.awarded_points := 0;
+      NEW.awarded_points := COALESCE(NEW.awarded_points, 0);
     END IF;
   ELSE
     -- Zero points condition for unverified, DNF, or disqualified
     NEW.awarded_points := 0;
   END IF;
-
 
   NEW.updated_at := timezone('utc'::text, now());
   RETURN NEW;
@@ -571,12 +571,12 @@ CREATE POLICY "System and admins can append audit logs"
 -- ====================================================================
 
 
--- Secure Procedure: Record score correction with mandatory reason
 CREATE OR REPLACE FUNCTION public.fn_correct_round1_score(
   p_score_id UUID,
   p_new_position INTEGER,
   p_new_status verification_status,
-  p_reason TEXT
+  p_reason TEXT,
+  p_new_score INTEGER DEFAULT NULL
 )
 RETURNS JSONB AS $$
 DECLARE
@@ -588,22 +588,19 @@ BEGIN
     RAISE EXCEPTION 'Unauthorized: Only authenticated IGNITE admins can correct scores.';
   END IF;
 
-
   IF p_reason IS NULL OR length(trim(p_reason)) < 5 THEN
     RAISE EXCEPTION 'A comprehensive reason (minimum 5 characters) is mandatory for score corrections.';
   END IF;
 
-
-  SELECT * INTO v_old_record FROM public.round1_scores WHERE id =
-p_score_id;
+  SELECT * INTO v_old_record FROM public.round1_scores WHERE id = p_score_id;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Round 1 score record % not found.', p_score_id;
   END IF;
 
-
   UPDATE public.round1_scores
   SET
     finishing_position = p_new_position,
+    awarded_points = COALESCE(p_new_score, awarded_points),
     verification_status = p_new_status,
     entered_by = v_admin_id,
     notes = COALESCE(notes, '') || ' [Corrected: ' || p_reason || ']'

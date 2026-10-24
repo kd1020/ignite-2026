@@ -68,19 +68,19 @@ export default function Round2Matches() {
   const [pairings, setPairings] = useState({});
   const [activePairingSlot, setActivePairingSlot] = useState(1);
   const [showLaunchModal, setShowLaunchModal] = useState(false);
-  const [launchReason, setLaunchReason] = useState('');
+  const [launchReason, setLaunchReason] = useState('Round 2 fixtures officially launched by tournament administrator');
   const [isLaunching, setIsLaunching] = useState(false);
 
   // Reset fixtures modal
   const [showResetModal, setShowResetModal] = useState(false);
-  const [resetReason, setResetReason] = useState('');
+  const [resetReason, setResetReason] = useState('Resetting Round 2 fixtures to reconfigure duels');
   const [isResetting, setIsResetting] = useState(false);
 
   // Match outcome modal
   const [targetFixture, setTargetFixture] = useState(null);
   const [chosenWinnerId, setChosenWinnerId] = useState('');
   const [matchStatus, setMatchStatus] = useState('completed');
-  const [auditReason, setAuditReason] = useState('');
+  const [auditReason, setAuditReason] = useState('Official duel outcome verified by referee');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Live Standings Drawer/Modal
@@ -221,22 +221,18 @@ export default function Round2Matches() {
       }
     }
 
-    if (!launchReason.trim() || launchReason.trim().length < 4) {
-      alert('An audit log reason (min 4 characters) is required to launch Round 2.');
-      return;
-    }
-
     setIsLaunching(true);
+    const finalReason = launchReason.trim() || 'Round 2 fixtures officially launched by tournament administrator';
     try {
       await createRound2Fixtures({
         qualifiedCount: qualifiedTeams.length,
         duelCount: d,
         fixturesList: allFixtures,
-        reason: launchReason
+        reason: finalReason
       });
 
       setShowLaunchModal(false);
-      setLaunchReason('');
+      setLaunchReason('Round 2 fixtures officially launched by tournament administrator');
       setViewMode('matchplay');
       setNotification({
         type: 'success',
@@ -252,16 +248,12 @@ export default function Round2Matches() {
 
   // Reset Round 2
   const handleResetSubmit = async () => {
-    if (!resetReason.trim() || resetReason.trim().length < 4) {
-      alert('An audit log reason is required to reset Round 2.');
-      return;
-    }
-
     setIsResetting(true);
+    const finalReason = resetReason.trim() || 'Resetting Round 2 fixtures to reconfigure duels';
     try {
-      await resetRound2Fixtures({ reason: resetReason });
+      await resetRound2Fixtures({ reason: finalReason });
       setShowResetModal(false);
-      setResetReason('');
+      setResetReason('Resetting Round 2 fixtures to reconfigure duels');
       setViewMode('setup');
       setSetupStep(1);
       setNotification({
@@ -282,13 +274,13 @@ export default function Round2Matches() {
     const m = Array.isArray(fixture.match) ? fixture.match[0] : fixture.match;
     setChosenWinnerId(m?.winning_team_id || fixture.team_a?.id || '');
     setMatchStatus(m?.result_status || 'completed');
-    setAuditReason('');
+    setAuditReason('Official duel outcome verified by referee');
   };
 
   const closeDecisionModal = () => {
     setTargetFixture(null);
     setChosenWinnerId('');
-    setAuditReason('');
+    setAuditReason('Official duel outcome verified by referee');
   };
 
   const handleSaveResult = async () => {
@@ -297,18 +289,14 @@ export default function Round2Matches() {
       return;
     }
 
-    if (!auditReason.trim() || auditReason.trim().length < 4) {
-      alert('An audit log reason (min 4 characters) is required for match outcomes.');
-      return;
-    }
-
     setIsSubmitting(true);
+    const finalReason = auditReason.trim() || 'Official duel outcome verified by referee';
     try {
       await recordRound2ResultWithAudit({
         fixtureId: targetFixture.id,
         winningTeamId: chosenWinnerId,
         resultStatus: matchStatus,
-        reason: auditReason
+        reason: finalReason
       });
 
       setNotification({
@@ -842,14 +830,13 @@ export default function Round2Matches() {
               </div>
 
               <div className="form-group">
-                <label>AUDIT REASON / MATCH NOTES *</label>
+                <label>AUDIT REASON / MATCH NOTES (OPTIONAL)</label>
                 <textarea
                   value={auditReason}
                   onChange={(e) => setAuditReason(e.target.value)}
-                  placeholder="e.g. Verified by Arena Referee 2; confirmed buzzer-beater finish."
+                  placeholder="e.g. Verified by Arena Referee; confirmed match finish."
                   className="comic-input"
                   rows="2"
-                  required
                 />
               </div>
             </div>
@@ -902,14 +889,13 @@ export default function Round2Matches() {
               </div>
 
               <div className="form-group">
-                <label>MANDATORY AUDIT REASON *</label>
+                <label>AUDIT REASON (OPTIONAL)</label>
                 <textarea
                   value={launchReason}
                   onChange={(e) => setLaunchReason(e.target.value)}
                   placeholder="e.g. Launched official Round 2 fixtures after verifying team rosters."
                   className="comic-input"
                   rows="3"
-                  required
                 />
               </div>
             </div>
@@ -947,14 +933,13 @@ export default function Round2Matches() {
               </div>
 
               <div className="form-group">
-                <label>MANDATORY AUDIT REASON *</label>
+                <label>AUDIT REASON (OPTIONAL)</label>
                 <textarea
                   value={resetReason}
                   onChange={(e) => setResetReason(e.target.value)}
                   placeholder="e.g. Reconfiguring match pairs due to team roster check-in updates."
                   className="comic-input"
                   rows="3"
-                  required
                 />
               </div>
             </div>

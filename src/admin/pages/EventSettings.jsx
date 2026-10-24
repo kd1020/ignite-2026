@@ -8,9 +8,8 @@ export default function EventSettings() {
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState(null);
-  const [auditReason, setAuditReason] = useState('');
+  const [auditReason, setAuditReason] = useState('Official event configuration update');
   const [isSaving, setIsSaving] = useState(false);
-
 
   const loadSettings = async () => {
     try {
@@ -28,28 +27,20 @@ export default function EventSettings() {
     }
   };
 
-
   useEffect(() => {
     loadSettings();
   }, []);
 
-
   const handleUpdate = async (key, newValue, desc) => {
-    if (!auditReason.trim() || auditReason.trim().length < 4) {
-      alert('An audit log reason is required before modifying live event parameters.');
-      return;
-    }
-
+    const finalReason = auditReason.trim() || 'Official event configuration update';
 
     setIsSaving(true);
     try {
-      await updateEventSetting(key, newValue, auditReason);
+      await updateEventSetting(key, newValue, finalReason);
       setNotification({
         type: 'success',
-        message: `Setting [${key}] successfully updated and logged to
-audit trail.`
+        message: `Setting [${key}] successfully updated and logged to audit trail.`
       });
-      setAuditReason('');
       loadSettings();
     } catch (err) {
       setNotification({ type: 'error', message: err.message || 'Update failed.' });
@@ -88,10 +79,10 @@ CONFIGURATION</span>
 
 
         <div className="mandatory-audit-box">
-          <label>GLOBAL AUDIT REASON (REQUIRED FOR EDITS):</label>
+          <label>GLOBAL AUDIT REASON (OPTIONAL):</label>
           <input
             type="text"
-            placeholder="e.g. Official organizer decision to freeze leaderboard at round end."
+            placeholder="e.g. Official event configuration update"
             value={auditReason}
             onChange={(e) => setAuditReason(e.target.value)}
             className="comic-input audit-reason-input"

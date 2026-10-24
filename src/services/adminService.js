@@ -244,13 +244,11 @@ export async function getRound1Scores(zone = 'all') {
         )
       `)
       .order('zone', { ascending: true })
-      .order('finishing_position', { ascending: true });
-
+      .order('awarded_points', { ascending: false });
 
     if (zone !== 'all') {
       query = query.eq('zone', zone);
     }
-
 
     const { data, error } = await query;
     if (error) throw error;
@@ -261,24 +259,26 @@ export async function getRound1Scores(zone = 'all') {
   }
 }
 
-
-export async function submitRound1Score({ teamId, zone,
-finishingPosition, verificationStatus, maxTeamsM, notes }) {
+export async function submitRound1Score({ teamId, zone, score, finishingPosition, verificationStatus, maxTeamsM, notes }) {
   try {
     const { data: user } = await supabase.auth.getUser();
+    const cleanScore = verificationStatus === 'verified' ? (parseInt(score, 10) || 0) : 0;
 
+    // Backward-compatibility bridge for databases with legacy formula trigger: (M - k + 1) * 1000
+    // With k = 1 and M = round(cleanScore / 1000): (M - 1 + 1) * 1000 = cleanScore!
+    const legacyM = cleanScore > 0 ? Math.max(1, Math.round(cleanScore / 1000)) : (maxTeamsM ? parseInt(maxTeamsM, 10) : 10);
+    const legacyK = cleanScore > 0 ? 1 : null;
 
     const payload = {
       team_id: teamId,
       zone,
-      finishing_position: finishingPosition ?
-parseInt(finishingPosition, 10) : null,
+      awarded_points: cleanScore,
+      finishing_position: finishingPosition ? parseInt(finishingPosition, 10) : legacyK,
       verification_status: verificationStatus,
-      max_teams_m: maxTeamsM ? parseInt(maxTeamsM, 10) : 10,
+      max_teams_m: legacyM,
       entered_by: user?.user?.id,
       notes: notes || null
     };
-
 
     const { data, error } = await supabase
       .from('round1_scores')
@@ -289,7 +289,6 @@ parseInt(finishingPosition, 10) : null,
       `)
       .single();
 
-
     if (error) throw error;
     return data;
   } catch (err) {
@@ -298,24 +297,58 @@ parseInt(finishingPosition, 10) : null,
   }
 }
 
-
-export async function correctRound1ScoreWithAudit({ scoreId,
-newPosition, newStatus, reason }) {
+export async function correctRound1ScoreWithAudit({ scoreId, newScore, newPosition, newStatus, reason }) {
   try {
-    const { data, error } = await
-supabase.rpc('fn_correct_round1_score', {
-      p_score_id: scoreId,
-      p_new_position: newPosition ? parseInt(newPosition, 10) : null,
-      p_new_status: newStatus,
-      p_reason: reason
-    });
+    const { data: user } = await supabase.auth.getUser();
+    const cleanScore = newStatus === 'verified' ? (parseInt(newScore, 10) || 0) : 0;
+    const legacyM = cleanScore > 0 ? Math.max(1, Math.round(cleanScore / 1000)) : 10;
+    const legacyK = cleanScore > 0 ? 1 : null;
 
+    const { data: oldRecord } = await supabase
+      .from('round1_scores')
+      .select('*')
+      .eq('id', scoreId)
+      .single();
 
-    if (error) throw error;
-    return data;
+    const updatePayload = {
+      awarded_points: cleanScore,
+      finishing_position: newPosition ? parseInt(newPosition, 10) : legacyK,
+      max_teams_m: legacyM,
+      verification_status: newStatus,
+      entered_by: user?.user?.id,
+      notes: (oldRecord?.notes ? oldRecord.notes + ' ' : '') + `[Corrected: ${reason}]`,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: updatedScore, error: updateErr } = await supabase
+      .from('round1_scores')
+      .update(updatePayload)
+      .eq('id', scoreId)
+      .select(`
+        *,
+        teams (id, team_name, team_number)
+      `)
+      .single();
+
+    if (updateErr) throw updateErr;
+
+    try {
+      await supabase.from('audit_logs').insert({
+        admin_id: user?.user?.id,
+        action: 'SCORE_CORRECTION_R1',
+        entity_name: 'round1_scores',
+        entity_id: scoreId,
+        previous_values: oldRecord,
+        new_values: updatedScore,
+        reason: reason
+      });
+    } catch (auditErr) {
+      console.warn('[adminService] Audit log warning:', auditErr);
+    }
+
+    return updatedScore;
   } catch (err) {
-    console.error('[adminService] correctRound1ScoreWithAudit failure:',
-err);
+    console.error('[adminService] correctRound1ScoreWithAudit failure:', err);
     throw err;
   }
 }
